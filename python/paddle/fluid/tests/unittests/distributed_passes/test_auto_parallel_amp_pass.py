@@ -19,6 +19,7 @@ import numpy as np
 import unittest
 import paddle
 import paddle.distributed.fleet as fleet
+from auto_parallel_pass_test_base import AutoPallelPassTestBase
 
 
 class TestAMPPass(AutoPallelPassTestBase):

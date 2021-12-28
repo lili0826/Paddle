@@ -540,9 +540,6 @@ class AMPPass(PassBase):
             if self.get_attr("use_dynamic_loss_scaling"):
                 self._update_loss_scaling(grads, found_inf)
 
-        main_program.global_block()._sync_with_cpp()
-        print(main_program)
-
     def _init_amp_var(self):
         self._loss_scaling = paddle.static.create_global_var(
             name=unique_name.generate("loss_scaling"),
