@@ -53,6 +53,10 @@ class DistributedDefaultImpl0(DistributedOperatorImpl):
     def is_input_compatible(self, dist_op):
         op_desc = dist_op.serial_op.desc
         op_dist_attr = dist_op.dist_attr
+        input_names = op_desc.input_names()
+        xshape_arg_names = []
+        if "XShape" in input_names:
+            xshape_arg_names = op_desc.input("XShape")
         for arg_name in op_desc.input_arg_names():
             serial_tensor = dist_op.get_serial_input(arg_name)
             dims_mapping = op_dist_attr.get_input_dims_mapping(arg_name)
@@ -63,10 +67,18 @@ class DistributedDefaultImpl0(DistributedOperatorImpl):
                 # continue
                 # if len(dims_mapping) < 1:
                 #     continue
-            if len(dims_mapping) > 1:
-                for mapping in dims_mapping[1:]:
-                    if mapping != -1:
-                        return False
+            if arg_name not in xshape_arg_names:
+                if len(dims_mapping) > 1:
+                    for mapping in dims_mapping[1:]:
+                        if mapping != -1:
+                            return False
+            else:
+                if dims_mapping[0] != -1:
+                    return False
+                if len(dims_mapping) > 2:
+                    for mapping in dims_mapping[2:]:
+                        if mapping != -1:
+                            return False
         return True
 
     def is_output_compatible(self, dist_op):
@@ -105,17 +117,31 @@ class DistributedDefaultImpl0(DistributedOperatorImpl):
         op_dist_attr = dist_op.dist_attr
         batch_dim_mappings = []
         # Check input compatibility
+        input_names = op_desc.input_names()
+        xshape_arg_names = []
+        if "XShape" in input_names:
+            xshape_arg_names = op_desc.input("XShape")
         for arg_name in op_desc.input_arg_names():
             serial_tensor = dist_op.get_serial_input(arg_name)
             if serial_tensor.is_parameter:
                 continue
             dims_mapping = op_dist_attr.get_input_dims_mapping(arg_name)
-            if len(dims_mapping) > 1:
-                for mapping in dims_mapping[1:]:
-                    if mapping != -1:
-                        return False
-            if len(dims_mapping) >= 1:
-                batch_dim_mappings.append(dims_mapping[0])
+            if arg_name not in xshape_arg_names:
+                if len(dims_mapping) > 1:
+                    for mapping in dims_mapping[1:]:
+                        if mapping != -1:
+                            return False
+                if len(dims_mapping) >= 1:
+                    batch_dim_mappings.append(dims_mapping[0])
+            else:
+                if dims_mapping[0] != -1:
+                    return False
+                if len(dims_mapping) > 2:
+                    for mapping in dims_mapping[2:]:
+                        if mapping != -1:
+                            return False
+                if len(dims_mapping) >= 2:
+                    batch_dim_mappings.append(dims_mapping[1])
 
         # Check output compatibility
         output_names = op_desc.output_names()
@@ -160,24 +186,34 @@ class DistributedDefaultImpl0(DistributedOperatorImpl):
             or op_desc.type() == "slice" \
                 or op_desc.type() == "while":
             return False
+
+        input_names = op_desc.input_names()
+        input_xshape_arg_names = []
+        if "XShape" in input_names:
+            input_xshape_arg_names = op_desc.input("XShape")
+
         output_names = op_desc.output_names()
-        xshape_arg_names = []
+        output_xshape_arg_names = []
         if "XShape" in output_names:
-            xshape_arg_names = op_desc.output("XShape")
+            output_xshape_arg_names = op_desc.output("XShape")
+
         batch_dim_mappings = []
         for arg_name in op_desc.input_arg_names():
             serial_tensor = dist_op.get_serial_input(arg_name)
             if serial_tensor.is_parameter:
                 continue
             dims_mapping = op_dist_attr.get_input_dims_mapping(arg_name)
-            if len(dims_mapping) >= 1:
-                batch_dim_mappings.append(dims_mapping[0])
+            if arg_name not in input_xshape_arg_names:
+                if len(dims_mapping) >= 1:
+                    batch_dim_mappings.append(dims_mapping[0])
+            else:
+                batch_dim_mappings.append(dims_mapping[1])
         for arg_name in op_desc.output_arg_names():
             serial_tensor = dist_op.get_serial_output(arg_name)
             if serial_tensor.is_parameter:
                 continue
             dims_mapping = op_dist_attr.get_output_dims_mapping(arg_name)
-            if arg_name not in xshape_arg_names:
+            if arg_name not in output_xshape_arg_names:
                 if len(dims_mapping) >= 1:
                     batch_dim_mappings.append(dims_mapping[0])
             else:
@@ -194,16 +230,22 @@ class DistributedDefaultImpl0(DistributedOperatorImpl):
             if serial_tensor.is_parameter:
                 continue
             dims_mapping = op_dist_attr.get_input_dims_mapping(arg_name)
-            if len(dims_mapping
-                   ) >= 1 and compatible_dim_mapping != dims_mapping[0]:
-                dims_mapping[0] = compatible_dim_mapping
-                changed = True
+            if arg_name not in input_xshape_arg_names:
+                if len(dims_mapping
+                       ) >= 1 and compatible_dim_mapping != dims_mapping[0]:
+                    dims_mapping[0] = compatible_dim_mapping
+                    changed = True
+            else:
+                if len(dims_mapping
+                       ) >= 2 and compatible_dim_mapping != dims_mapping[1]:
+                    dims_mapping[1] = compatible_dim_mapping
+                    changed = True
         for arg_name in op_desc.output_arg_names():
             serial_tensor = dist_op.get_serial_output(arg_name)
             if serial_tensor.is_parameter:
                 continue
             dims_mapping = op_dist_attr.get_output_dims_mapping(arg_name)
-            if arg_name not in xshape_arg_names:
+            if arg_name not in output_xshape_arg_names:
                 if len(dims_mapping
                        ) >= 1 and compatible_dim_mapping != dims_mapping[0]:
                     dims_mapping[0] = compatible_dim_mapping
