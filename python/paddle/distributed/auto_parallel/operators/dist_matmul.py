@@ -1506,10 +1506,7 @@ class DistributedMulImpl0(DistributedOperatorImpl):
         y_name = op_desc.input('Y')[0]
         x_dims_mapping = op_dist_attr.get_input_dims_mapping(x_name)
         y_dims_mapping = op_dist_attr.get_input_dims_mapping(y_name)
-<<<<<<< HEAD
 
-=======
->>>>>>> 7e1155ed6204ba26adeff798c322a1ac968d48da
         if is_dim_shard(x_dims_mapping[-1]):
             return False
         if is_dim_shard(y_dims_mapping[-2]) or is_dim_replicate(y_dims_mapping[
