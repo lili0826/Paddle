@@ -1506,7 +1506,10 @@ class DistributedMulImpl0(DistributedOperatorImpl):
         y_name = op_desc.input('Y')[0]
         x_dims_mapping = op_dist_attr.get_input_dims_mapping(x_name)
         y_dims_mapping = op_dist_attr.get_input_dims_mapping(y_name)
+<<<<<<< HEAD
 
+=======
+>>>>>>> 7e1155ed6204ba26adeff798c322a1ac968d48da
         if is_dim_shard(x_dims_mapping[-1]):
             return False
         if is_dim_shard(y_dims_mapping[-2]) or is_dim_replicate(y_dims_mapping[
@@ -1734,7 +1737,10 @@ class DistributedMulImpl1(DistributedOperatorImpl):
         for mapping in x_dims_mapping[1:-1]:
             if is_dim_shard(mapping):
                 return False
+<<<<<<< HEAD
 
+=======
+>>>>>>> 7e1155ed6204ba26adeff798c322a1ac968d48da
         return True
 
     def is_output_compatible(self, dist_op):
@@ -1940,6 +1946,7 @@ class DistributedMulImpl2(DistributedOperatorImpl):
         if is_valid_list_index(x_dims_mapping,
                                -2) and is_dim_shard(x_dims_mapping[-2]):
             return False
+
         if is_dim_shard(y_dims_mapping[-1]):
             return False
         if is_valid_list_index(y_dims_mapping,
