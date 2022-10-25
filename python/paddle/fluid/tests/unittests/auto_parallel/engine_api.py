@@ -78,11 +78,13 @@ def batch_generator_creator():
 
 class MLPLayer(nn.Layer):
 
-    def __init__(self,
-                 hidden_size=1024,
-                 intermediate_size=4 * 1024,
-                 dropout_ratio=0.1,
-                 initializer_range=0.02):
+    def __init__(
+        self,
+        hidden_size=1024,
+        intermediate_size=4 * 1024,
+        dropout_ratio=0.1,
+        initializer_range=0.02,
+    ):
         super(MLPLayer, self).__init__()
         d_model = hidden_size
         dim_feedforward = intermediate_size
@@ -121,16 +123,20 @@ class MLPLayer(nn.Layer):
 def train_high_level(fetch):
     global is_fetch
     is_fetch = fetch
-    mlp = MLPLayer(hidden_size=hidden_size,
-                   intermediate_size=4 * hidden_size,
-                   dropout_ratio=0.1,
-                   initializer_range=0.02)
+    mlp = MLPLayer(
+        hidden_size=hidden_size,
+        intermediate_size=4 * hidden_size,
+        dropout_ratio=0.1,
+        initializer_range=0.02,
+    )
     loss = paddle.nn.CrossEntropyLoss()
-    optimizer = paddle.optimizer.Adam(learning_rate=0.00001,
-                                      beta1=0.9,
-                                      beta2=0.999,
-                                      epsilon=1e-08,
-                                      grad_clip=None)
+    optimizer = paddle.optimizer.Adam(
+        learning_rate=0.00001,
+        beta1=0.9,
+        beta2=0.999,
+        epsilon=1e-08,
+        grad_clip=None,
+    )
     metric = paddle.metric.Accuracy()
 
     strategy = auto.Strategy()
@@ -141,20 +147,24 @@ def train_high_level(fetch):
     # train
     train_dataset = MyDataset(batch_num * batch_size)
     eval_dataset1 = MyDataset(5 * batch_size)
-
-    history = engine.fit(train_data=train_dataset,
-                         epochs=2,
-                         batch_size=batch_size,
-                         valid_data=eval_dataset1,
-                         log_freq=1)
+    history = engine.fit(
+        train_data=train_dataset,
+        epochs=2,
+        batch_size=batch_size,
+        valid_data=eval_dataset1,
+        log_freq=1,
+    )
+    engine.cost()
 
     # eval
     eval_dataset2 = MyDataset(batch_size)
     engine.evaluate(eval_dataset2, batch_size=batch_size)
+    engine.cost()
 
     # predict
     test_dataset = MyDataset(batch_size)
     outputs = engine.predict(test_dataset, batch_size=batch_size)
+    engine.cost()
 
     # save
     temp_dir = tempfile.TemporaryDirectory()
@@ -165,16 +175,20 @@ def train_high_level(fetch):
 
 
 def train_low_level():
-    mlp = MLPLayer(hidden_size=hidden_size,
-                   intermediate_size=4 * hidden_size,
-                   dropout_ratio=0.1,
-                   initializer_range=0.02)
+    mlp = MLPLayer(
+        hidden_size=hidden_size,
+        intermediate_size=4 * hidden_size,
+        dropout_ratio=0.1,
+        initializer_range=0.02,
+    )
     loss = paddle.nn.CrossEntropyLoss()
-    optimizer = paddle.optimizer.Adam(learning_rate=0.00001,
-                                      beta1=0.9,
-                                      beta2=0.999,
-                                      epsilon=1e-08,
-                                      grad_clip=None)
+    optimizer = paddle.optimizer.Adam(
+        learning_rate=0.00001,
+        beta1=0.9,
+        beta2=0.999,
+        epsilon=1e-08,
+        grad_clip=None,
+    )
     metric = paddle.metric.Accuracy()
 
     strategy = auto.Strategy()
@@ -257,16 +271,20 @@ def train_low_level():
 
 
 def train_builtin_data_vars():
-    mlp = MLPLayer(hidden_size=hidden_size,
-                   intermediate_size=4 * hidden_size,
-                   dropout_ratio=0.1,
-                   initializer_range=0.02)
+    mlp = MLPLayer(
+        hidden_size=hidden_size,
+        intermediate_size=4 * hidden_size,
+        dropout_ratio=0.1,
+        initializer_range=0.02,
+    )
     loss = paddle.nn.CrossEntropyLoss()
-    optimizer = paddle.optimizer.Adam(learning_rate=0.00001,
-                                      beta1=0.9,
-                                      beta2=0.999,
-                                      epsilon=1e-08,
-                                      grad_clip=None)
+    optimizer = paddle.optimizer.Adam(
+        learning_rate=0.00001,
+        beta1=0.9,
+        beta2=0.999,
+        epsilon=1e-08,
+        grad_clip=None,
+    )
     metric = paddle.metric.Accuracy()
 
     strategy = auto.Strategy()
@@ -317,16 +335,20 @@ def train_non_builtin_data_vars():
         places = static.cuda_places()
         loader.set_batch_generator(batch_generator_creator(), places=places)
 
-        mlp = MLPLayer(hidden_size=hidden_size,
-                       intermediate_size=4 * hidden_size,
-                       dropout_ratio=0.1,
-                       initializer_range=0.02)
+        mlp = MLPLayer(
+            hidden_size=hidden_size,
+            intermediate_size=4 * hidden_size,
+            dropout_ratio=0.1,
+            initializer_range=0.02,
+        )
         loss = paddle.nn.CrossEntropyLoss()
-        optimizer = paddle.optimizer.Adam(learning_rate=0.00001,
-                                          beta1=0.9,
-                                          beta2=0.999,
-                                          epsilon=1e-08,
-                                          grad_clip=None)
+        optimizer = paddle.optimizer.Adam(
+            learning_rate=0.00001,
+            beta1=0.9,
+            beta2=0.999,
+            epsilon=1e-08,
+            grad_clip=None,
+        )
         metric = paddle.metric.Accuracy()
         predict = mlp(input)
         loss_var = loss(predict, label)
@@ -341,10 +363,12 @@ def train_non_builtin_data_vars():
 
     # train
     engine.to_mode("train")
-    engine.prepare(inputs=[input],
-                   labels=[label],
-                   main_program=main_program,
-                   startup_program=startup_program)
+    engine.prepare(
+        inputs=[input],
+        labels=[label],
+        main_program=main_program,
+        startup_program=startup_program,
+    )
     for _ in range(epoch_num):
         loader.start()  # call DataLoader.start() before each epoch starts
         try:
@@ -356,6 +380,54 @@ def train_non_builtin_data_vars():
 
 
 def get_cost():
+    main_program = static.Program()
+    startup_program = static.Program()
+    with static.program_guard(main_program,
+                              startup_program), utils.unique_name.guard():
+        input = static.data(name="input",
+                            shape=[batch_size, image_size],
+                            dtype='float32')
+        label = static.data(name="label", shape=[batch_size, 1], dtype='int64')
+
+        loader = paddle.io.DataLoader.from_generator(feed_list=[input, label],
+                                                     capacity=4 * batch_size,
+                                                     iterable=False)
+        places = static.cuda_places()
+        loader.set_batch_generator(batch_generator_creator(), places=places)
+
+        mlp = MLPLayer(
+            hidden_size=hidden_size,
+            intermediate_size=4 * hidden_size,
+            dropout_ratio=0.1,
+            initializer_range=0.02,
+        )
+        loss = paddle.nn.CrossEntropyLoss()
+        optimizer = paddle.optimizer.Adam(
+            learning_rate=0.00001,
+            beta1=0.9,
+            beta2=0.999,
+            epsilon=1e-08,
+            grad_clip=None,
+        )
+        metric = paddle.metric.Accuracy()
+        predict = mlp(input)
+        loss_var = loss(predict, label)
+
+    strategy = auto.Strategy()
+    strategy.auto_mode = "semi"
+
+    engine = auto.Engine(loss=loss_var,
+                         optimizer=optimizer,
+                         metrics=metric,
+                         strategy=strategy)
+    engine.prepare(main_program=main_program,
+                   startup_program=startup_program,
+                   inputs=[input],
+                   labels=[label])
+    engine.cost()
+
+
+def get_cost_by_default_program():
     main_program = static.default_main_program()
     startup_program = static.default_startup_program()
     with static.program_guard(main_program,
@@ -371,16 +443,20 @@ def get_cost():
         places = static.cuda_places()
         loader.set_batch_generator(batch_generator_creator(), places=places)
 
-        mlp = MLPLayer(hidden_size=hidden_size,
-                       intermediate_size=4 * hidden_size,
-                       dropout_ratio=0.1,
-                       initializer_range=0.02)
+        mlp = MLPLayer(
+            hidden_size=hidden_size,
+            intermediate_size=4 * hidden_size,
+            dropout_ratio=0.1,
+            initializer_range=0.02,
+        )
         loss = paddle.nn.CrossEntropyLoss()
-        optimizer = paddle.optimizer.Adam(learning_rate=0.00001,
-                                          beta1=0.9,
-                                          beta2=0.999,
-                                          epsilon=1e-08,
-                                          grad_clip=None)
+        optimizer = paddle.optimizer.Adam(
+            learning_rate=0.00001,
+            beta1=0.9,
+            beta2=0.999,
+            epsilon=1e-08,
+            grad_clip=None,
+        )
         metric = paddle.metric.Accuracy()
         predict = mlp(input)
         loss_var = loss(predict, label)
@@ -392,20 +468,24 @@ def get_cost():
                          optimizer=optimizer,
                          metrics=metric,
                          strategy=strategy)
-    engine.cost()
+    engine.cost(mode="train")
 
 
 def get_cost_by_spec():
-    mlp = MLPLayer(hidden_size=hidden_size,
-                   intermediate_size=4 * hidden_size,
-                   dropout_ratio=0.1,
-                   initializer_range=0.02)
+    mlp = MLPLayer(
+        hidden_size=hidden_size,
+        intermediate_size=4 * hidden_size,
+        dropout_ratio=0.1,
+        initializer_range=0.02,
+    )
     loss = paddle.nn.CrossEntropyLoss()
-    optimizer = paddle.optimizer.Adam(learning_rate=0.00001,
-                                      beta1=0.9,
-                                      beta2=0.999,
-                                      epsilon=1e-08,
-                                      grad_clip=None)
+    optimizer = paddle.optimizer.Adam(
+        learning_rate=0.00001,
+        beta1=0.9,
+        beta2=0.999,
+        epsilon=1e-08,
+        grad_clip=None,
+    )
     metric = paddle.metric.Accuracy()
 
     strategy = auto.Strategy()
@@ -425,4 +505,5 @@ if __name__ == "__main__":
     train_builtin_data_vars()
     train_non_builtin_data_vars()
     get_cost()
+    get_cost_by_default_program()
     get_cost_by_spec()
