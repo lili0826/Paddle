@@ -951,11 +951,10 @@ class Engine:
             self._switch_mode(self._mode)
 
         if auto_utils.use_new_executor():
-            local_batch_size = self._validate_batch_size(batch_size)
             train_dataloader = self._prepare_dataloader(
                 train_data,
                 return_list=False,
-                batch_size=local_batch_size,
+                batch_size=batch_size,
                 epochs=epochs,
                 collate_fn=collate_fn,
             )
@@ -964,6 +963,7 @@ class Engine:
                 if steps_per_epoch is None
                 else steps_per_epoch
             )
+            local_batch_size = batch_size
         else:
             micro_batch_size = self._validate_batch_size(batch_size)
             train_dataloader = self._prepare_dataloader_from_generator(
@@ -1299,16 +1299,19 @@ class Engine:
         self._inputs_spec, self._labels_spec = self._prepare_data_spec(
             dataset, sample_split, batch_size
         )
-        micro_batch_size = self._validate_batch_size(batch_size)
+
         if not self._has_prepared[self._mode]:
             self._prepare_program(self._mode)
         else:
             self._switch_mode(self._mode)
 
+        if not auto_utils.use_new_executor():
+            batch_size = self._validate_batch_size(batch_size)
+
         dataloader = self._prepare_dataloader(
             dataset,
             return_list=False,
-            batch_size=micro_batch_size,
+            batch_size=batch_size,
             shuffle=shuffle,
             drop_last=drop_last,
             collate_fn=collate_fn,
@@ -1574,8 +1577,6 @@ class Engine:
     def _validate_batch_size(self, batch_size):
         if batch_size is None:
             return None
-        if self._strategy.pipeline.enable and auto_utils.use_new_executor():
-            return batch_size
         assert (
             batch_size % self._acc_steps == 0
         ), "Requires batch_size:[{}] to be divisible by acc_steps:[{}].".format(
